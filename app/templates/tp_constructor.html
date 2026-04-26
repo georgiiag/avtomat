@@ -5,20 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ТП-Конструктор | Цифровой Цех</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        (function () {
+            const stored = localStorage.getItem('theme');
+            const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = stored || (systemDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="/static/ui.css">
+    <script defer src="/static/ui.js"></script>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --success: #27ae60;
-            --bg: #f4f7f6;
+        html[data-theme="light"] {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --success: #16a34a;
+            --sidebar-width: 280px;
+        }
+
+        html[data-theme="dark"] {
+            --primary: #0b1224;
+            --accent: #60a5fa;
+            --success: #4ade80;
             --sidebar-width: 280px;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: var(--font-sans);
             margin: 0;
             display: flex;
-            background-color: var(--bg);
+            background: var(--bg-accent);
+            color: var(--text);
             height: 100vh;
             overflow: hidden;
         }
@@ -26,17 +43,18 @@
         /* Sidebar Style */
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--primary);
-            color: white;
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.92));
+            color: rgba(255, 255, 255, 0.92);
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
             z-index: 10;
         }
 
         .sidebar-header {
             padding: 20px;
-            background: #1a252f;
+            background: rgba(2, 6, 23, 0.38);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
             text-align: center;
         }
 
@@ -52,7 +70,7 @@
             padding: 15px 20px 5px 20px;
             font-size: 0.7rem;
             text-transform: uppercase;
-            color: #7f8c8d;
+            color: rgba(203, 213, 225, 0.72);
             font-weight: 800;
             letter-spacing: 1px;
         }
@@ -116,7 +134,7 @@
             margin-bottom: 5px;
         }
 
-        .sidebar-input::placeholder { color: #7f8c8d; }
+        .sidebar-input::placeholder { color: rgba(203, 213, 225, 0.68); }
 
         /* Main Content */
         .main-content {
@@ -127,19 +145,32 @@
         }
 
         .top-bar {
-            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(14px);
+            background: linear-gradient(180deg, var(--surface-2), var(--surface));
+            border-bottom: 1px solid var(--border);
             padding: 10px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-sm);
             gap: 20px;
+        }
+
+        .top-bar .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .product-info-block {
             display: flex;
             gap: 25px;
-            border-right: 1px solid #eee;
+            border-right: 1px solid var(--border);
             padding-right: 25px;
         }
 
@@ -150,7 +181,7 @@
 
         .meta-label {
             font-size: 0.65rem;
-            color: #999;
+            color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 800;
             letter-spacing: 0.5px;
@@ -161,7 +192,7 @@
             border: none;
             border-bottom: 1px solid transparent;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--text);
             font-size: 0.95rem;
             background: transparent;
             padding: 0;
@@ -175,7 +206,7 @@
         }
 
         .meta-value::placeholder {
-            color: #ccc;
+            color: rgba(148, 163, 184, 0.70);
             font-weight: normal;
         }
 
@@ -183,8 +214,8 @@
             flex-grow: 1;
             position: relative;
             overflow: auto;
-            background: #e9ecef;
-            padding: 40px;
+            background: transparent;
+            padding: 34px;
         }
 
         /* Flowchart Styles */
@@ -198,12 +229,13 @@
 
         .product-passport-card {
             width: 500px;
-            background: white;
-            border: 2px solid var(--accent);
-            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             padding: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(16px);
             position: relative;
         }
 
@@ -223,7 +255,7 @@
             color: var(--accent);
             text-transform: uppercase;
             margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 5px;
             display: flex;
             align-items: center;
@@ -238,14 +270,15 @@
 
         .op-cube {
             width: 240px;
-            background: white;
+            background: var(--surface);
             border: 2px solid var(--primary);
             border-radius: 10px;
             padding: 15px;
             text-align: center;
             cursor: pointer;
             position: relative;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(16px);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
@@ -271,7 +304,7 @@
 
         .op-cube .op-code {
             font-size: 0.8rem;
-            color: #777;
+            color: var(--text-muted);
             font-weight: bold;
             margin-bottom: 5px;
         }
@@ -316,7 +349,9 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(16px);
             width: 85%;
             max-width: 1000px;
             height: 90vh;
@@ -328,8 +363,8 @@
 
         .modal-header {
             padding: 20px;
-            background: var(--primary);
-            color: white;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.98), rgba(124, 58, 237, 0.96));
+            color: rgba(255, 255, 255, 0.95);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -343,7 +378,7 @@
 
         .modal-footer {
             padding: 15px 25px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
             gap: 10px;
@@ -365,15 +400,17 @@
 
         .form-group label {
             font-weight: 600;
-            color: #555;
+            color: var(--text);
             font-size: 0.9rem;
         }
 
         input, select, textarea {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
         }
 
         /* Transition Editor Styles */
@@ -384,8 +421,8 @@
         }
 
         .transition-row {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
         }
@@ -407,9 +444,10 @@
             width: 160px;
             font-size: 0.8rem;
             padding: 5px;
-            border: 1px solid #eee;
+            border: 1px solid var(--border);
             border-radius: 4px;
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text);
         }
 
         .transition-actions {
@@ -432,8 +470,8 @@
         .badge-img { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
 
         .modal-resource-results {
-            background: #fff;
-            border: 1px solid #e6eaee;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
             border-radius: 10px;
             padding: 10px;
             margin-bottom: 12px;
@@ -450,7 +488,7 @@
         .modal-resource-group-title {
             font-size: 0.75rem;
             font-weight: 800;
-            color: #7f8c8d;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin-bottom: 6px;
@@ -463,8 +501,8 @@
         }
 
         .modal-resource-item {
-            border: 1px solid #dfe6e9;
-            background: #f8f9fa;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 14px;
             padding: 6px 10px;
             font-size: 0.8rem;
@@ -474,14 +512,14 @@
 
         .modal-resource-item:hover {
             border-color: var(--accent);
-            background: #fff;
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .bom-preview {
-            border: 1px solid #e6eaee;
+            border: 1px solid var(--border);
             border-radius: 10px;
             padding: 10px;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.03);
             max-height: 420px;
             overflow: auto;
         }
@@ -492,28 +530,28 @@
         }
 
         .bom-table th, .bom-table td {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
             padding: 10px;
             font-size: 0.9rem;
             vertical-align: middle;
         }
 
         .bom-diff-added td {
-            background: #eafff1;
+            background: rgba(34, 197, 94, 0.12);
         }
 
         .bom-diff-changed td {
-            background: #fff6e6;
+            background: rgba(245, 158, 11, 0.14);
         }
 
         .bom-table thead th {
-            background: #f8f9fa;
-            color: #666;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
             font-weight: 700;
         }
 
         .bom-table .bom-title-row th {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.02);
             font-weight: 800;
             color: var(--primary);
             border-bottom: 2px solid var(--accent);
@@ -555,8 +593,8 @@
             height: 28px;
             border-radius: 6px;
             object-fit: cover;
-            border: 1px solid #e6eaee;
-            background: #f8f9fa;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
             flex: 0 0 auto;
         }
 
@@ -571,10 +609,10 @@
         }
 
         .bom-expander {
-            border: 1px solid #e6eaee;
-            background: #fff;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
             cursor: pointer;
-            color: #555;
+            color: var(--text);
         }
 
         .bom-expander:hover {
@@ -594,8 +632,8 @@
             height: 160px;
             object-fit: cover;
             border-radius: 10px;
-            border: 1px solid #e6eaee;
-            background: #f8f9fa;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .bom-file-list {
@@ -610,9 +648,9 @@
             justify-content: space-between;
             gap: 10px;
             padding: 8px 10px;
-            border: 1px solid #e6eaee;
+            border: 1px solid var(--border);
             border-radius: 10px;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .bom-file-row a {
@@ -626,13 +664,13 @@
         }
 
         .bom-file-remove {
-            border: 1px solid #e6eaee;
-            background: #fff;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
             padding: 6px 10px;
             cursor: pointer;
             font-size: 0.8rem;
-            color: #555;
+            color: var(--text);
         }
 
         .bom-file-remove:hover {
@@ -661,33 +699,68 @@
 
         .bom-qty {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            color: #666;
+            color: var(--text-muted);
             text-align: center;
         }
 
         .btn {
             padding: 10px 20px;
-            border-radius: 6px;
-            border: none;
+            border-radius: 12px;
+            border: 1px solid var(--border);
             cursor: pointer;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: opacity 0.2s;
+            transition: transform var(--dur-1) ease, border-color var(--dur-1) ease, background var(--dur-1) ease, box-shadow var(--dur-1) ease, opacity var(--dur-1) ease;
+            background: linear-gradient(180deg, var(--surface-2), var(--surface));
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
         }
 
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #ddd; color: #555; }
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--border-strong);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            border-color: rgba(37, 99, 235, 0.34);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.98), rgba(124, 58, 237, 0.96));
+            color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 18px 40px rgba(37, 99, 235, 0.26);
+        }
+
+        .btn-success {
+            border-color: rgba(34, 197, 94, 0.22);
+            background: rgba(34, 197, 94, 0.16);
+            color: var(--success);
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            border-color: var(--border);
+            background: rgba(148, 163, 184, 0.14);
+            color: var(--text);
+            box-shadow: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            color: var(--text);
+            box-shadow: none;
+        }
 
         .hidden { display: none; }
 
         /* Directory Views */
         .directory-view {
             padding: 0 30px;
-            background: white;
+            background: transparent;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -698,10 +771,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: white;
+            background: transparent;
             padding: 15px 0;
             z-index: 10;
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 1px solid var(--border);
             gap: 20px;
             flex-shrink: 0; /* Header doesn't shrink */
         }
@@ -717,24 +790,25 @@
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            color: #95a5a6;
+            color: var(--text-muted);
         }
 
         .search-input {
             width: 100%;
             padding: 10px 15px 10px 35px;
-            border: 1px solid #dfe6e9;
+            border: 1px solid var(--border);
             border-radius: 20px;
             font-size: 0.9rem;
             transition: all 0.3s;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
         }
 
         .search-input:focus {
             outline: none;
             border-color: var(--accent);
-            background: white;
-            box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: var(--focus-ring);
         }
 
         .directory-table-container {
@@ -742,7 +816,7 @@
             overflow-y: auto; /* Включаем прокрутку только для списка */
             padding-bottom: 30px;
             scrollbar-width: thin; /* Тонкий скроллбар для Firefox */
-            scrollbar-color: var(--accent) #f1f1f1;
+            scrollbar-color: var(--accent) rgba(148, 163, 184, 0.12);
         }
 
         /* Стилизация скроллбара для Chrome/Safari */
@@ -750,10 +824,10 @@
             width: 8px;
         }
         .directory-table-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: rgba(148, 163, 184, 0.12);
         }
         .directory-table-container::-webkit-scrollbar-thumb {
-            background: #ccc;
+            background: rgba(148, 163, 184, 0.34);
             border-radius: 4px;
         }
         .directory-table-container::-webkit-scrollbar-thumb:hover {
@@ -769,12 +843,13 @@
         th, td {
             text-align: left;
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
         }
 
         th { 
-            background: #f8f9fa; 
-            color: #666; 
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
             position: sticky;
             top: 0; /* Sticky to the top of the container */
             z-index: 9;
@@ -796,7 +871,7 @@
                 </button>
                 <input type="file" id="create-tp-file" class="hidden" accept=".docx" onchange="handleCreateTpDocx(this)">
                 <input type="file" id="update-spec-file" class="hidden" accept=".docx" onchange="handleUpdateSpecDocx(this)">
-                <div style="font-size: 0.6rem; color: #7f8c8d; text-align: right;">Загрузите DOCX со спецификацией</div>
+                <div style="font-size: 0.6rem; color: rgba(203, 213, 225, 0.72); text-align: right;">Загрузите DOCX со спецификацией</div>
                 <div style="display:flex; justify-content:flex-end; margin-top: 8px;">
                     <button id="sidebar-bom-toggle" class="btn btn-outline" style="padding:6px 10px; border-radius: 12px;" onclick="toggleSidebarBomExpand()" title="Развернуть/свернуть спецификацию">
                         <i class="fas fa-plus"></i>
@@ -849,25 +924,26 @@
                 <button id="btn-tp-export-html" class="btn btn-outline hidden" onclick="exportCurrentTpHtml()"><i class="fas fa-file-code"></i> Сохранить HTML</button>
                 <button id="btn-tp-back" class="btn btn-secondary hidden" onclick="tpMenuBack()"><i class="fas fa-arrow-left"></i> Назад</button>
                 <button id="btn-tp-close" class="btn btn-outline hidden" onclick="tpMenuClose()"><i class="fas fa-xmark"></i> Закрыть</button>
+                <button class="ui-btn ui-icon-btn ui-btn-ghost" type="button" data-theme-toggle aria-label="Тема"></button>
             </div>
         </div>
 
         <!-- VIEW: Пустой экран / Приветствие -->
         <div id="view-welcome" class="view-container">
-            <div style="text-align: center; margin-top: 100px; color: #7f8c8d;">
+            <div style="text-align: center; margin-top: 100px; color: var(--text-muted);">
                 <i class="fas fa-edit" style="font-size: 5rem; margin-bottom: 20px; opacity: 0.3;"></i>
                 <h2>Редактор технологических процессов</h2>
                 <p>Для начала работы нажмите «Загрузить спецификацию» и выберите DOCX.</p>
                 <p>Вы можете работать с несколькими изделиями одновременно, переключаясь между ними в списке.</p>
             </div>
-            <div style="max-width: 720px; margin: 30px auto 0 auto; background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="max-width: 720px; margin: 30px auto 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm); backdrop-filter: blur(16px);">
                 <div style="font-weight: 700; margin-bottom: 10px;">Сервер распознавания (Flask)</div>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <input id="recognizer-base-url" type="text" placeholder="например: http://127.0.0.1:5000 (пусто = текущий сайт)" style="flex:1; min-width: 260px; padding: 10px 12px; border: 1px solid #dfe6e9; border-radius: 10px;">
+                    <input id="recognizer-base-url" type="text" placeholder="например: http://127.0.0.1:5000 (пусто = текущий сайт)" style="flex:1; min-width: 260px; padding: 10px 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text); border-radius: 12px;">
                     <button class="btn btn-outline" type="button" onclick="saveRecognizerBaseUrl()">Сохранить</button>
                     <button class="btn btn-primary" type="button" onclick="testRecognizerServer()">Проверить</button>
                 </div>
-                <div id="recognizer-test-result" style="margin-top: 10px; color: #7f8c8d; font-size: 0.9rem;">Текущий режим: авто</div>
+                <div id="recognizer-test-result" style="margin-top: 10px; color: var(--text-muted); font-size: 0.9rem;">Текущий режим: авто</div>
             </div>
         </div>
 
@@ -879,7 +955,7 @@
         </div>
 
         <!-- VIEW: Справочник РЦ -->
-        <div id="view-directory-centers" class="view-container hidden" style="background: white; padding: 0; overflow: hidden;">
+        <div id="view-directory-centers" class="view-container hidden" style="background: transparent; padding: 0; overflow: hidden;">
             <div class="directory-view">
                 <div class="directory-header">
                     <h3 style="margin:0; min-width:200px;"><i class="fas fa-microchip"></i> Рабочие центры</h3>
@@ -907,7 +983,7 @@
         </div>
 
         <!-- VIEW: Справочник Оснастки -->
-        <div id="view-directory-tooling" class="view-container hidden" style="background: white; padding: 0; overflow: hidden;">
+        <div id="view-directory-tooling" class="view-container hidden" style="background: transparent; padding: 0; overflow: hidden;">
             <div class="directory-view">
                 <div class="directory-header">
                     <h3 style="margin:0; min-width:200px;"><i class="fas fa-wrench"></i> Оснастка</h3>
@@ -933,7 +1009,7 @@
         </div>
 
         <!-- VIEW: Справочник Инструмента -->
-        <div id="view-directory-instruments" class="view-container hidden" style="background: white; padding: 0; overflow: hidden;">
+        <div id="view-directory-instruments" class="view-container hidden" style="background: transparent; padding: 0; overflow: hidden;">
             <div class="directory-view">
                 <div class="directory-header">
                     <h3 style="margin:0; min-width:200px;"><i class="fas fa-screwdriver-wrench"></i> Инструмент</h3>
@@ -958,7 +1034,7 @@
         </div>
 
         <!-- VIEW: Справочник Материалов -->
-        <div id="view-directory-materials" class="view-container hidden" style="background: white; padding: 0; overflow: hidden;">
+        <div id="view-directory-materials" class="view-container hidden" style="background: transparent; padding: 0; overflow: hidden;">
             <div class="directory-view">
                 <div class="directory-header">
                     <h3 style="margin:0; min-width:200px;"><i class="fas fa-layer-group"></i> Материалы</h3>
@@ -983,7 +1059,7 @@
         </div>
 
         <!-- VIEW: Справочник Производителей -->
-        <div id="view-directory-manufacturers" class="view-container hidden" style="background: white; padding: 0; overflow: hidden;">
+        <div id="view-directory-manufacturers" class="view-container hidden" style="background: transparent; padding: 0; overflow: hidden;">
             <div class="directory-view">
                 <div class="directory-header">
                     <h3 style="margin:0; min-width:200px;"><i class="fas fa-industry"></i> Производители</h3>

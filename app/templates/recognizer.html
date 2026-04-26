@@ -4,132 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Распознавание спецификации (DOCX)</title>
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --ok: #27ae60;
-            --bad: #e74c3c;
-            --bg: #f0f2f5;
-        }
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background: var(--bg);
-            color: #111;
-        }
-        .bar {
-            background: var(--primary);
-            color: #fff;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        .bar a {
-            color: #fff;
-            text-decoration: none;
-            opacity: 0.9;
-        }
-        .wrap {
-            padding: 18px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 14px;
-        }
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .btn {
-            border: 0;
-            background: var(--accent);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        input[type="file"] {
-            padding: 8px;
-            border: 1px solid #dfe6e9;
-            border-radius: 10px;
-            background: #fff;
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            background: #eef2f7;
-        }
-        .pill.ok { background: #e8f5e9; color: #1b7f4b; }
-        .pill.bad { background: #ffebee; color: #b13b2e; }
-        pre {
-            background: #0b1220;
-            color: #d3fbd8;
-            padding: 12px;
-            border-radius: 12px;
-            overflow: auto;
-            max-height: 360px;
-            margin: 0;
-            font-family: Consolas, monospace;
-            font-size: 12px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #e6eaee;
-            padding: 8px;
-            vertical-align: top;
-            font-size: 0.92rem;
-        }
-        th { background: #f7f8fa; text-align: left; }
-        .muted { color: #667085; font-size: 0.92rem; }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        (function () {
+            const stored = localStorage.getItem('theme');
+            const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = stored || (systemDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="/static/ui.css">
+    <script defer src="/static/ui.js"></script>
 </head>
 <body>
-    <div class="bar">
-        <div>Тест распознавания спецификации (Flask)</div>
-        <a href="/tp_constructor">Открыть конструктор ТП</a>
-    </div>
-
-    <div class="wrap">
-        <div class="card">
-            <div class="row">
-                <input id="file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-                <button id="btn" class="btn" type="button">Распознать DOCX</button>
-                <span id="status" class="pill">Ожидание файла</span>
+    <div class="ui-shell">
+        <header class="ui-topbar">
+            <div class="ui-topbar-inner">
+                <div class="ui-brand">
+                    <div class="ui-brand-badge"><i class="fa-solid fa-file-lines"></i></div>
+                    <div class="ui-brand-title">
+                        <strong>Распознавание спецификации</strong>
+                        <span>DOCX → BOM JSON</span>
+                    </div>
+                </div>
+                <div class="ui-actions">
+                    <a class="ui-btn ui-btn-ghost" href="/tp_constructor" style="text-decoration:none;">Открыть ТП‑конструктор</a>
+                    <button class="ui-btn ui-icon-btn ui-btn-ghost" type="button" data-theme-toggle aria-label="Тема"></button>
+                </div>
             </div>
-            <div class="muted" style="margin-top:10px;">
-                Отправляет файл на <span style="font-family:Consolas, monospace;">POST /api/parse_bom_docx</span> и показывает результат.
+        </header>
+
+        <main class="ui-container">
+            <div class="ui-grid-2">
+                <section class="ui-card">
+                    <div class="ui-card-inner">
+                        <h2>Загрузка DOCX</h2>
+                        <div class="ui-subtitle">Отправляет файл на <span style="font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: var(--code); padding: 2px 6px; border-radius: 8px;">POST /api/parse_bom_docx</span> и показывает результат.</div>
+                        <div style="height:12px;"></div>
+                        <div class="ui-file">
+                            <div class="ui-row" style="justify-content: space-between;">
+                                <input id="file" class="ui-input" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="max-width: 520px;">
+                                <button id="btn" class="ui-btn ui-btn-primary" type="button">Распознать</button>
+                                <span id="status" class="ui-pill">Ожидание файла</span>
+                            </div>
+                        </div>
+                        <div style="height:14px;"></div>
+                        <div class="ui-kpi">
+                            <div class="ui-kpi-item">
+                                <strong>Поддержка</strong>
+                                <span>Авто‑поиск таблицы спецификации</span>
+                            </div>
+                            <div class="ui-kpi-item">
+                                <strong>Уровни</strong>
+                                <span>level / отступы / обозначение</span>
+                            </div>
+                            <div class="ui-kpi-item">
+                                <strong>Выход</strong>
+                                <span>rows + product_name/designation</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ui-card">
+                    <div class="ui-card-inner">
+                        <h2>Первые строки</h2>
+                        <div class="ui-subtitle">Быстрый просмотр первых 50 строк.</div>
+                        <div style="height:12px;"></div>
+                        <div id="tableWrap" class="ui-subtitle">Нет данных</div>
+                    </div>
+                </section>
             </div>
-        </div>
 
-        <div class="card">
-            <div style="font-weight:700; margin-bottom:8px;">Результат (JSON)</div>
-            <pre id="out">{}</pre>
-        </div>
+            <div style="height:16px;"></div>
 
-        <div class="card">
-            <div style="font-weight:700; margin-bottom:8px;">Первые строки спецификации</div>
-            <div id="tableWrap" class="muted">Нет данных</div>
-        </div>
+            <section class="ui-card">
+                <div class="ui-card-inner">
+                    <h2>Результат (JSON)</h2>
+                    <pre id="out" class="ui-pre">{}</pre>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
@@ -141,7 +96,7 @@
 
         function setStatus(text, kind) {
             statusEl.textContent = text;
-            statusEl.className = 'pill' + (kind ? (' ' + kind) : '');
+            statusEl.className = 'ui-pill' + (kind ? (' ' + kind) : '');
         }
 
         function safeJson(val) {
@@ -152,11 +107,12 @@
             const arr = Array.isArray(rows) ? rows : [];
             if (!arr.length) {
                 tableWrap.textContent = 'Строк не найдено';
-                tableWrap.className = 'muted';
+                tableWrap.className = 'ui-subtitle';
                 return;
             }
             const head = ['level', 'code', 'name', 'qty', 'unit'];
             const tbl = document.createElement('table');
+            tbl.className = 'ui-table';
             const thead = document.createElement('thead');
             const trh = document.createElement('tr');
             head.forEach(h => {
@@ -238,4 +194,3 @@
     </script>
 </body>
 </html>
-
