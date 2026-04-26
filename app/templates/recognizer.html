@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Распознавание спецификации (DOCX)</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --ok: #27ae60;
+            --bad: #e74c3c;
+            --bg: #f0f2f5;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #111;
+        }
+        .bar {
+            background: var(--primary);
+            color: #fff;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .bar a {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.9;
+        }
+        .wrap {
+            padding: 18px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 14px;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            border: 0;
+            background: var(--accent);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid #dfe6e9;
+            border-radius: 10px;
+            background: #fff;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            background: #eef2f7;
+        }
+        .pill.ok { background: #e8f5e9; color: #1b7f4b; }
+        .pill.bad { background: #ffebee; color: #b13b2e; }
+        pre {
+            background: #0b1220;
+            color: #d3fbd8;
+            padding: 12px;
+            border-radius: 12px;
+            overflow: auto;
+            max-height: 360px;
+            margin: 0;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #e6eaee;
+            padding: 8px;
+            vertical-align: top;
+            font-size: 0.92rem;
+        }
+        th { background: #f7f8fa; text-align: left; }
+        .muted { color: #667085; font-size: 0.92rem; }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <div>Тест распознавания спецификации (Flask)</div>
+        <a href="/tp_constructor">Открыть конструктор ТП</a>
+    </div>
+
+    <div class="wrap">
+        <div class="card">
+            <div class="row">
+                <input id="file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <button id="btn" class="btn" type="button">Распознать DOCX</button>
+                <span id="status" class="pill">Ожидание файла</span>
+            </div>
+            <div class="muted" style="margin-top:10px;">
+                Отправляет файл на <span style="font-family:Consolas, monospace;">POST /api/parse_bom_docx</span> и показывает результат.
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="font-weight:700; margin-bottom:8px;">Результат (JSON)</div>
+            <pre id="out">{}</pre>
+        </div>
+
+        <div class="card">
+            <div style="font-weight:700; margin-bottom:8px;">Первые строки спецификации</div>
+            <div id="tableWrap" class="muted">Нет данных</div>
+        </div>
+    </div>
+
+    <script>
+        const fileEl = document.getElementById('file');
+        const btn = document.getElementById('btn');
+        const out = document.getElementById('out');
+        const statusEl = document.getElementById('status');
+        const tableWrap = document.getElementById('tableWrap');
+
+        function setStatus(text, kind) {
+            statusEl.textContent = text;
+            statusEl.className = 'pill' + (kind ? (' ' + kind) : '');
+        }
+
+        function safeJson(val) {
+            try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+        }
+
+        function renderRowsTable(rows) {
+            const arr = Array.isArray(rows) ? rows : [];
+            if (!arr.length) {
+                tableWrap.textContent = 'Строк не найдено';
+                tableWrap.className = 'muted';
+                return;
+            }
+            const head = ['level', 'code', 'name', 'qty', 'unit'];
+            const tbl = document.createElement('table');
+            const thead = document.createElement('thead');
+            const trh = document.createElement('tr');
+            head.forEach(h => {
+                const th = document.createElement('th');
+                th.textContent = h;
+                trh.appendChild(th);
+            });
+            thead.appendChild(trh);
+            tbl.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            arr.slice(0, 50).forEach(r => {
+                const tr = document.createElement('tr');
+                head.forEach(h => {
+                    const td = document.createElement('td');
+                    td.textContent = (r && (r[h] === 0 || r[h])) ? String(r[h]) : '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            tbl.appendChild(tbody);
+
+            tableWrap.innerHTML = '';
+            tableWrap.className = '';
+            tableWrap.appendChild(tbl);
+        }
+
+        async function run() {
+            const f = fileEl.files && fileEl.files[0];
+            if (!f) {
+                setStatus('Выберите файл DOCX', 'bad');
+                return;
+            }
+            if (!String(f.name || '').toLowerCase().endsWith('.docx')) {
+                setStatus('Нужен файл .docx', 'bad');
+                return;
+            }
+            setStatus('Отправка...', '');
+            btn.disabled = true;
+
+            const form = new FormData();
+            form.append('file', f, f.name);
+
+            let resp;
+            try {
+                resp = await fetch('/api/parse_bom_docx', { method: 'POST', body: form });
+            } catch (e) {
+                out.textContent = safeJson({ ok: false, error: 'Нет подключения к серверу', details: String(e && e.message ? e.message : e) });
+                renderRowsTable([]);
+                setStatus('Нет подключения', 'bad');
+                btn.disabled = false;
+                return;
+            }
+
+            let data;
+            try {
+                data = await resp.json();
+            } catch {
+                out.textContent = safeJson({ ok: false, error: 'Сервер вернул не JSON', status: resp.status });
+                renderRowsTable([]);
+                setStatus('Ошибка ответа', 'bad');
+                btn.disabled = false;
+                return;
+            }
+
+            out.textContent = safeJson(data);
+            renderRowsTable(data && data.rows ? data.rows : []);
+            if (resp.ok && data && data.ok) setStatus('Готово', 'ok');
+            else setStatus('Ошибка распознавания', 'bad');
+            btn.disabled = false;
+        }
+
+        btn.addEventListener('click', run);
+        fileEl.addEventListener('change', () => {
+            const f = fileEl.files && fileEl.files[0];
+            if (!f) setStatus('Ожидание файла', '');
+            else setStatus(`Выбран файл: ${f.name}`, '');
+        });
+    </script>
+</body>
+</html>
+

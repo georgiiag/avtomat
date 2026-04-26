@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Загруженные файлы (не коммитим в репозиторий)
+app/static/shared_docs/
+
+# Временные файлы
+temp_doc/
+extracted_docx/
+*.tmp
+~$*
+
+# Word lock-файлы
+~$*.doc
+~$*.docx
+
+# OS
+.DS_Store
+Thumbs.db

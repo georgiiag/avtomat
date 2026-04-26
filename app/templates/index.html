@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Единый Производственный Комплекс «ЦИФРОВОЙ ЦЕХ»</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .pipeline-stepper {
+            display: flex;
+            justify-content: space-around;
+            padding: 2rem;
+            background: white;
+            margin: 1rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .step:not(.active):not(.completed) {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+
+        .step.completed:not(:last-child)::after {
+            background: var(--success);
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .step.active .step-icon {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .step.completed .step-icon {
+            background: var(--success);
+            color: white;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            padding: 0 2rem 2rem;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            min-height: 450px;
+            display: none; /* Скрываем по умолчанию */
+        }
+
+        .module-card.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .module-header i {
+            font-size: 1.5rem;
+            margin-right: 10px;
+            color: var(--accent);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-online { background: #e8f5e9; color: var(--success); }
+        .status-offline { background: #ffebee; color: var(--danger); }
+
+        .tech-process-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .process-item {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .process-item.done { background: #f0fff4; border-color: #c6f6d5; }
+        .process-item.current { border-left: 5px solid var(--accent); background: #f0f7ff; }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .log-container {
+            background: #1e272e;
+            color: #0be881;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            height: 250px;
+            overflow-y: auto;
+        }
+
+        .progress-container {
+            margin-top: 1rem;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1><i class="fas fa-microchip"></i> ЦИФРОВОЙ ЦЕХ</h1>
+        <div>
+            <span id="system-status" class="status-badge status-online">Система: Online</span>
+            <span id="clock" style="margin-left: 15px; font-weight: bold;">00:00:00</span>
+        </div>
+    </div>
+
+    <div class="pipeline-stepper" id="stepper">
+        <div class="step active" id="step-1" onclick="window.location.href='{{ url_for('tp_constructor') }}'">
+            <div class="step-icon"><i class="fas fa-drafting-compass"></i></div>
+            <div>ТП-Конструктор</div>
+        </div>
+        <div class="step" id="step-2">
+            <div class="step-icon"><i class="fas fa-warehouse"></i></div>
+            <div>Склад WMS</div>
+        </div>
+        <div class="step" id="step-3">
+            <div class="step-icon"><i class="fas fa-tools"></i></div>
+            <div>Сборка MES</div>
+        </div>
+        <div class="step" id="step-4">
+            <div class="step-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div>Контроль ОТК</div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="content-area">
+            <!-- ЭТАП 1: ТП-Конструктор -->
+            <div id="module-1" class="module-card active">
+                <div class="module-header">
+                    <i class="fas fa-edit"></i>
+                    <h2>Разработка техпроцесса (ТП)</h2>
+                </div>
+                <p>Создание структуры изделия и утверждение документации.</p>
+                <ul class="tech-process-list">
+                    <li class="process-item current" id="tp-item-1">
+                        <i class="fas fa-file-signature"></i>
+                        <div><strong>Формирование дерева операций</strong><br><small>Статус: В работе</small></div>
+                    </li>
+                    <li class="process-item" id="tp-item-2">
+                        <i class="fas fa-shield-alt"></i>
+                        <div><strong>Многоуровневое визирование</strong><br><small>Ожидание: Главный инженер</small></div>
+                    </li>
+                </ul>
+                <button class="btn btn-primary" id="btn-approve-tp" onclick="approveTP()">Утвердить и заблокировать ТП</button>
+            </div>
+
+            <!-- ЭТАП 2: Склад WMS -->
+            <div id="module-2" class="module-card">
+                <div class="module-header">
+                    <i class="fas fa-boxes-stacked"></i>
+                    <h2>Комплектация заказа (WMS)</h2>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <ul class="tech-process-list" id="bom-list">
+                            <li class="process-item" id="bom-1"><i class="fas fa-box"></i> <div>Корпус 100-A</div></li>
+                            <li class="process-item" id="bom-2"><i class="fas fa-box"></i> <div>Плата 200-B</div></li>
+                        </ul>
+                    </div>
+                    <div style="width: 250px; text-align: center;">
+                        <div style="background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 10px;">
+                            <i class="fas fa-qrcode fa-4x"></i>
+                        </div>
+                        <button class="btn btn-primary" onclick="scanComponent()">Сканировать деталь</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЭТАП 3: Сборка MES -->
+            <div id="module-3" class="module-card">
+                <div class="module-header">
+                    <i class="fas fa-industry"></i>
+                    <h2>Сборочная линия (MES)</h2>
+                </div>
+                <div class="progress-container">
+                    <span>Прогресс сборки: <strong id="mes-percent">0%</strong></span>
+                    <div class="progress-bar"><div id="mes-fill" class="progress-fill"></div></div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="startAssembly()">Начать операцию</button>
+                    <button class="btn btn-warning" onclick="reportIssue()">Сообщить об отклонении (NC)</button>
+                </div>
+            </div>
+
+            <!-- ЭТАП 4: Контроль ОТК -->
+            <div id="module-4" class="module-card">
+                <div class="module-header">
+                    <i class="fas fa-certificate"></i>
+                    <h2>Выпуск и Контроль ОТК</h2>
+                </div>
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-award fa-5x" style="color: var(--success); margin-bottom: 1rem;"></i>
+                    <h3>Изделие прошло проверку</h3>
+                    <button class="btn btn-primary" onclick="resetSystem()">Новый цикл производства</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-card" style="margin-bottom: 1rem;">
+                <h3>Логистика</h3>
+                <div class="log-container" id="event-log">
+                    [SYSTEM] Ожидание утверждения ТП...<br>
+                </div>
+            </div>
+            <button class="btn btn-danger" onclick="emergencyStop()"><i class="fas fa-exclamation-triangle"></i> ЭКСТРЕННЫЙ СТОП</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let scannedCount = 0;
+        let assemblyProgress = 0;
+
+        function updateClock() {
+            document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0];
+        }
+        setInterval(updateClock, 1000);
+
+        function addLog(msg) {
+            const log = document.getElementById('event-log');
+            const time = new Date().toTimeString().split(' ')[0];
+            log.innerHTML += `[${time}] ${msg}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function switchModule(step) {
+            document.querySelectorAll('.module-card').forEach(m => m.classList.remove('active'));
+            document.getElementById(`module-${step}`).classList.add('active');
+            
+            document.querySelectorAll('.step').forEach((s, idx) => {
+                if (idx + 1 < step) s.className = 'step completed';
+                else if (idx + 1 === step) s.className = 'step active';
+                else s.className = 'step';
+            });
+            currentStep = step;
+        }
+
+        // Логика Этапа 1
+        function approveTP() {
+            addLog("ТП утвержден. Криптографический хеш: 0x8f...2a");
+            document.getElementById('tp-item-1').className = 'process-item done';
+            document.getElementById('tp-item-2').className = 'process-item done';
+            setTimeout(() => {
+                addLog("Данные BOM переданы в модуль WMS.");
+                switchModule(2);
+            }, 1000);
+        }
+
+        // Логика Этапа 2
+        function scanComponent() {
+            scannedCount++;
+            if (scannedCount <= 2) {
+                document.getElementById(`bom-${scannedCount}`).className = 'process-item done';
+                addLog(`Деталь ${scannedCount} провалидирована (ячейка + QR).`);
+            }
+            if (scannedCount === 2) {
+                setTimeout(() => {
+                    addLog("Комплект готов к запуску. Передача в MES.");
+                    switchModule(3);
+                }, 1000);
+            }
+        }
+
+        // Логика Этапа 3
+        function startAssembly() {
+            if (assemblyProgress >= 100) return;
+            addLog("Запуск сборочной операции...");
+            const interval = setInterval(() => {
+                assemblyProgress += 10;
+                document.getElementById('mes-fill').style.width = assemblyProgress + '%';
+                document.getElementById('mes-percent').textContent = assemblyProgress + '%';
+                if (assemblyProgress >= 100) {
+                    clearInterval(interval);
+                    addLog("Сборка завершена. Ожидание контролера ОТК.");
+                    setTimeout(() => switchModule(4), 1500);
+                }
+            }, 300);
+        }
+
+        function emergencyStop() {
+            document.getElementById('system-status').className = 'status-badge status-offline';
+            document.getElementById('system-status').textContent = 'System: HALTED';
+            addLog("!!! ЭКСТРЕННАЯ ОСТАНОВКА ВЫЗВАНА ОПЕРАТОРОМ !!!");
+            alert("ВНИМАНИЕ: Производство остановлено. Все механизмы заблокированы.");
+        }
+
+        function resetSystem() {
+            location.reload();
+        }
+
+        function reportIssue() {
+            addLog("ВНИМАНИЕ: Создана карточка несоответствия (NC).");
+            alert("Инцидент зафиксирован. Ожидайте решения технолога.");
+        }
+    </script>
+</body>
+</html>
