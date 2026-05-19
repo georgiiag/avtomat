@@ -4179,20 +4179,35 @@
             const node = (root.id === currentEditingBomNodeId) ? root : findBomNodeById(root.children || [], currentEditingBomNodeId);
             if (!node) return;
             const meta = ensureBomMeta(node);
-            const reader = new FileReader();
-            reader.onload = () => {
-                const dataUrl = String(reader.result || '');
-                if (!dataUrl) return;
-                meta.imageData = dataUrl;
-                meta.imageUrl = dataUrl;
-                const img = document.getElementById('bom-item-image-preview');
-                if (img) {
-                    img.src = meta.imageUrl;
-                    img.style.display = 'block';
+            tryUploadAttachment(file).then(data => {
+                const url = String(data?.url || '').trim();
+                if (url) {
+                    meta.imageData = url;
+                    meta.imageUrl = url;
+                    const img = document.getElementById('bom-item-image-preview');
+                    if (img) {
+                        img.src = meta.imageUrl;
+                        img.style.display = 'block';
+                    }
+                    renderFlowchart();
+                    return;
                 }
-                renderFlowchart();
-            };
-            reader.readAsDataURL(file);
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const dataUrl = String(reader.result || '');
+                    if (!dataUrl) return;
+                    meta.imageData = dataUrl;
+                    meta.imageUrl = dataUrl;
+                    const img = document.getElementById('bom-item-image-preview');
+                    if (img) {
+                        img.src = meta.imageUrl;
+                        img.style.display = 'block';
+                    }
+                    renderFlowchart();
+                };
+                reader.readAsDataURL(file);
+            });
         }
 
         function handleBomItemPdf(input) {
@@ -4208,13 +4223,22 @@
 
             for (const f of files) {
                 if (!f) continue;
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const dataUrl = String(reader.result || '');
-                    meta.pdfs.push({ id: `pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: f.name, url: dataUrl, dataUrl });
-                    renderBomItemPdfList(meta);
-                };
-                reader.readAsDataURL(f);
+                tryUploadAttachment(f).then(data => {
+                    const url = String(data?.url || '').trim();
+                    if (url) {
+                        meta.pdfs.push({ id: `pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: f.name, url, dataUrl: '' });
+                        renderBomItemPdfList(meta);
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const dataUrl = String(reader.result || '');
+                        meta.pdfs.push({ id: `pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: f.name, url: dataUrl, dataUrl });
+                        renderBomItemPdfList(meta);
+                    };
+                    reader.readAsDataURL(f);
+                });
             }
         }
 
@@ -5075,6 +5099,21 @@
             return out;
         }
 
+        async function tryUploadAttachment(file) {
+            if (!file) return null;
+            const form = new FormData();
+            form.append('file', file, file && file.name ? file.name : 'file');
+            let resp;
+            try {
+                resp = await fetch('/api/upload_attachment', { method: 'POST', body: form });
+            } catch (e) {
+                return null;
+            }
+            const data = await resp.json().catch(() => null);
+            if (!resp.ok || !data || !data.ok || !data.url) return null;
+            return data;
+        }
+
         function handleOpFileAttach(input) {
             const files = input.files ? Array.from(input.files) : [];
             input.value = '';
@@ -5089,9 +5128,7 @@
                 if (lower.endsWith('.pdf')) { type = 'pdf'; icon = 'fa-file-pdf'; }
                 else if (lower.endsWith('.doc') || lower.endsWith('.docx')) { type = 'word'; icon = 'fa-file-word'; }
 
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const url = String(reader.result || '');
+                const addBadge = (url) => {
                     const badge = document.createElement('div');
                     badge.className = `badge badge-${type}`;
                     badge.dataset.type = type;
@@ -5100,7 +5137,18 @@
                     badge.innerHTML = `<i class="fas ${icon}"></i> ${file.name} <i class="fas fa-times" onclick="this.parentElement.remove()" style="cursor:pointer;margin-left:5px"></i>`;
                     container.appendChild(badge);
                 };
-                reader.readAsDataURL(file);
+
+                tryUploadAttachment(file).then(data => {
+                    const url = String(data?.url || '').trim();
+                    if (url) {
+                        addBadge(url);
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = () => addBadge(String(reader.result || ''));
+                    reader.readAsDataURL(file);
+                });
             });
         }
 
@@ -5113,18 +5161,30 @@
             let type = 'img', icon = 'fa-file-image';
             if (file.name.endsWith('.pdf')) { type = 'pdf'; icon = 'fa-file-pdf'; }
             else if (file.name.match(/\.docx?$/)) { type = 'word'; icon = 'fa-file-word'; }
-            const reader = new FileReader();
-            reader.onload = () => {
+
+            const addBadge = (url) => {
                 const badge = document.createElement('div');
                 badge.className = `badge badge-${type}`;
                 badge.dataset.type = type;
                 badge.dataset.name = file.name;
-                badge.dataset.url = String(reader.result || '');
+                badge.dataset.url = String(url || '');
                 badge.innerHTML = `<i class="fas ${icon}"></i> ${file.name} <i class="fas fa-times" onclick="this.parentElement.remove()" style="cursor:pointer;margin-left:5px"></i>`;
                 badgeContainer.appendChild(badge);
             };
-            reader.readAsDataURL(file);
+
             input.value = '';
+
+            tryUploadAttachment(file).then(data => {
+                const url = String(data?.url || '').trim();
+                if (url) {
+                    addBadge(url);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = () => addBadge(String(reader.result || ''));
+                reader.readAsDataURL(file);
+            });
         }
     </script>
 </body>

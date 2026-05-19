@@ -1,4 +1,5 @@
 import os
+import time
 
 from flask import Flask, render_template, jsonify, request, Response, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -32,6 +33,7 @@ def recognizer():
 
 UPLOAD_DIR = os.path.join(app.root_path, "static", "shared_docs")
 SNAPSHOT_DIR = os.path.join(app.root_path, "static", "shared_docs", "snapshots")
+ATTACHMENTS_DIR = os.path.join(app.root_path, "static", "attachments")
 
 def ensure_upload_dir():
     try:
@@ -42,6 +44,14 @@ def ensure_upload_dir():
 def ensure_snapshot_dir():
     try:
         os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+def ensure_attachments_dir(subdir=None):
+    try:
+        os.makedirs(ATTACHMENTS_DIR, exist_ok=True)
+        if subdir:
+            os.makedirs(os.path.join(ATTACHMENTS_DIR, str(subdir)), exist_ok=True)
     except Exception:
         pass
 
@@ -231,6 +241,77 @@ def save_tp_html():
     url = f"/static/shared_docs/snapshots/{save_name}"
     return jsonify({"ok": True, "url": url, "id": doc_id, "name": filename})
 
+@app.route('/api/upload_attachment', methods=['POST', 'OPTIONS'])
+def upload_attachment():
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    if 'file' not in request.files:
+        return jsonify({"ok": False, "error": "file is required"}), 400
+    f = request.files['file']
+    if not f or not f.filename:
+        return jsonify({"ok": False, "error": "empty file"}), 400
+
+    raw_filename = str(f.filename or "")
+    raw_ext = os.path.splitext(raw_filename)[1].lower().lstrip(".")
+
+    filename = secure_filename(raw_filename)
+    ext = os.path.splitext(filename)[1].lower().lstrip(".")
+
+    mimetype = str(getattr(f, "mimetype", "") or "").lower().strip()
+    mime_to_ext = {
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/webp": "webp",
+        "image/bmp": "bmp",
+        "image/tiff": "tiff",
+        "image/svg+xml": "svg",
+        "image/heic": "heic",
+        "image/heif": "heif",
+        "image/avif": "avif",
+    }
+
+    if not ext:
+        ext = raw_ext or mime_to_ext.get(mimetype, "")
+        if ext:
+            filename = (filename or "file") + "." + ext
+        elif not filename:
+            filename = "file.bin"
+            ext = "bin"
+
+    if not filename:
+        filename = f"file.{ext or 'bin'}"
+        ext = ext or "bin"
+
+    blocked = {
+        "html", "htm", "js", "mjs", "css",
+        "php", "py", "ps1", "bat", "cmd", "vbs",
+        "exe", "dll", "com", "scr", "msi", "jar",
+    }
+    if ext in blocked and not mimetype.startswith("image/"):
+        return jsonify({"ok": False, "error": f"unsupported file type: .{ext}"}), 400
+
+    subdir = time.strftime("%Y%m%d", time.localtime())
+    ensure_attachments_dir(subdir)
+
+    file_id = f"att-{int(time.time())}-{os.urandom(3).hex()}"
+    save_name = f"{file_id}__{filename}"
+    path = os.path.join(ATTACHMENTS_DIR, subdir, save_name)
+    try:
+        f.save(path)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"failed to save: {e}"}), 500
+
+    try:
+        size = os.path.getsize(path)
+    except Exception:
+        size = None
+
+    url = f"/static/attachments/{subdir}/{save_name}"
+    return jsonify({"ok": True, "url": url, "name": filename, "ext": ext, "size": size})
+
 @app.route('/api/parse_bom_docx', methods=['POST'])
 def parse_bom_docx():
     if 'file' not in request.files:
@@ -240,19 +321,75 @@ def parse_bom_docx():
     if not f or not f.filename:
         return jsonify({"ok": False, "error": "empty file"}), 400
 
-    filename = f.filename.lower()
-    if not filename.endswith('.docx'):
-        return jsonify({"ok": False, "error": "only .docx supported"}), 400
+    filename = (f.filename or "").lower()
+    if os.path.basename(filename).startswith("~$"):
+        return jsonify({"ok": False, "error": "Это временный файл MS Word (~$...). Закройте документ в Word и выберите исходный .doc файл."}), 400
+    is_docx = filename.endswith(".docx")
+    is_doc = filename.endswith(".doc")
+    if not (is_docx or is_doc):
+        return jsonify({"ok": False, "error": "only .doc/.docx supported"}), 400
 
     try:
         from docx import Document
     except Exception:
         return jsonify({"ok": False, "error": "python-docx is not installed"}), 500
 
-    try:
-        doc = Document(f.stream)
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"failed to read docx: {e}"}), 400
+    if is_docx:
+        try:
+            doc = Document(f.stream)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"failed to read docx: {e}"}), 400
+    else:
+        import shutil
+        import subprocess
+        import tempfile
+
+        tmp_dir = tempfile.mkdtemp(prefix="tp_ctor_doc_")
+        try:
+            in_name = secure_filename(os.path.basename(f.filename)) or "spec.doc"
+            if not in_name.lower().endswith(".doc"):
+                in_name = f"{in_name}.doc"
+            in_path = os.path.join(tmp_dir, in_name)
+            try:
+                f.save(in_path)
+            except Exception as e:
+                return jsonify({"ok": False, "error": f"failed to save .doc: {e}"}), 500
+
+            out_path = os.path.splitext(in_path)[0] + ".docx"
+
+            soffice = shutil.which("soffice") or shutil.which("libreoffice")
+            if not soffice:
+                return jsonify({"ok": False, "error": "Нужен конвертер .doc→.docx (LibreOffice/soffice). Используйте DOCX."}), 400
+
+            try:
+                subprocess.run(
+                    [soffice, "--headless", "--nologo", "--convert-to", "docx", "--outdir", tmp_dir, in_path],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+            except subprocess.TimeoutExpired:
+                return jsonify({"ok": False, "error": "DOC conversion timeout (soffice)"}), 500
+            except Exception as e:
+                return jsonify({"ok": False, "error": f"DOC conversion failed (soffice): {e}"}), 500
+
+            if not os.path.exists(out_path):
+                found = [x for x in os.listdir(tmp_dir) if x.lower().endswith(".docx")]
+                if found:
+                    out_path = os.path.join(tmp_dir, found[0])
+                else:
+                    return jsonify({"ok": False, "error": "DOC conversion produced no .docx"}), 500
+
+            try:
+                doc = Document(out_path)
+            except Exception as e:
+                return jsonify({"ok": False, "error": f"failed to read converted docx: {e}"}), 400
+        finally:
+            try:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            except Exception:
+                pass
 
     synonyms = {
         "level": ["уровень", "lvl", "level"],
