@@ -8,12 +8,15 @@ env/
 
 # Загруженные файлы (не коммитим в репозиторий)
 app/static/shared_docs/
+app/static/attachments/
 
 # Временные файлы
 temp_doc/
 extracted_docx/
 *.tmp
 ~$*
+_tmp_*
+tmp_upload_test.py
 
 # Word lock-файлы
 ~$*.doc
